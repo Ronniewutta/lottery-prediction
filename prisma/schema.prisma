@@ -1,13 +1,12 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-// User authentication and profile
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -27,7 +26,6 @@ model User {
   @@map("users")
 }
 
-// NextAuth accounts
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -48,7 +46,6 @@ model Account {
   @@map("accounts")
 }
 
-// NextAuth sessions
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
@@ -59,7 +56,6 @@ model Session {
   @@map("sessions")
 }
 
-// User profile for horoscope and preferences
 model UserProfile {
   id          String   @id @default(cuid())
   userId      String
@@ -77,92 +73,78 @@ model UserProfile {
   @@map("user_profiles")
 }
 
-// Thai lottery draws
 model ThaiLottery {
-  id            String   @id @default(cuid())
-  drawDate      DateTime @unique
-  drawNumber    String
-  firstPrize    String
-  lastTwoDigits String
+  id              String   @id @default(cuid())
+  drawDate        DateTime @unique
+  drawNumber      String
+  firstPrize      String
+  lastTwoDigits   String
   lastThreeDigits String
   frontThreeDigits String
-  prizes        Json     // Store all prize tiers as JSON
-  runningNumbers Json    // Store running numbers
-  createdAt     DateTime @default(now())
-
-  predictions Prediction[] @relation("ThaiLotteryPredictions")
+  prizes          Json
+  runningNumbers  Json
+  createdAt       DateTime @default(now())
 
   @@index([drawDate])
   @@map("thai_lottery")
 }
 
-// Vietnam XSMB lottery draws
 model VietnamLottery {
-  id            String   @id @default(cuid())
-  drawDate      DateTime @unique
-  drawNumber    String
-  region        String   // "mien_bac", "mien_nam", "mien_trung"
-  prizes        Json     // Store all prize tiers as JSON
-  specialPrize  String?
-  createdAt     DateTime @default(now())
-
-  predictions Prediction[] @relation("VietnamLotteryPredictions")
+  id           String   @id @default(cuid())
+  drawDate     DateTime @unique
+  drawNumber   String
+  region       String
+  prizes       Json
+  specialPrize String?
+  createdAt    DateTime @default(now())
 
   @@index([drawDate])
   @@index([region])
   @@map("vietnam_lottery")
 }
 
-// Laos lottery draws
 model LaosLottery {
-  id            String   @id @default(cuid())
-  drawDate      DateTime @unique
-  drawNumber    String
-  firstPrize    String
-  lastTwoDigits String
+  id              String   @id @default(cuid())
+  drawDate        DateTime @unique
+  drawNumber      String
+  firstPrize      String
+  lastTwoDigits   String
   lastThreeDigits String
-  prizes        Json     // Store all prize tiers as JSON
-  createdAt     DateTime @default(now())
-
-  predictions Prediction[] @relation("LaosLotteryPredictions")
+  prizes          Json
+  createdAt       DateTime @default(now())
 
   @@index([drawDate])
   @@map("laos_lottery")
 }
 
-// AI Predictions
 model Prediction {
-  id              String   @id @default(cuid())
-  userId          String?
-  predictionType  String   // "thai", "vietnam", "laos"
-  drawDate        DateTime
-  predictedNumbers Json    // Store predicted numbers
-  confidence      Float    // AI confidence score (0-1)
-  method          String   // Prediction method used
-  isCorrect       Boolean? // Was the prediction correct?
-  createdAt       DateTime @default(now())
+  id               String   @id @default(cuid())
+  userId           String?
+  predictionType   String
+  drawDate         DateTime
+  predictedNumbers Json
+  confidence       Float
+  method           String
+  isCorrect        Boolean?
+  createdAt        DateTime @default(now())
 
-  user           User?          @relation(fields: [userId], references: [id])
-  thaiLottery    ThaiLottery?   @relation("ThaiLotteryPredictions", fields: [drawDate], references: [drawDate], map: "fk_prediction_thai_lottery")
-  vietnamLottery VietnamLottery? @relation("VietnamLotteryPredictions", fields: [drawDate], references: [drawDate], map: "fk_prediction_vietnam_lottery")
-  laosLottery    LaosLottery?   @relation("LaosLotteryPredictions", fields: [drawDate], references: [drawDate], map: "fk_prediction_laos_lottery")
+  user User? @relation(fields: [userId], references: [id])
 
   @@index([predictionType])
   @@index([drawDate])
   @@map("predictions")
 }
 
-// Horoscope data for lottery predictions
 model HoroscopeData {
-  id          String   @id @default(cuid())
-  userId      String
-  date        DateTime
-  zodiacSign  String
+  id            String   @id @default(cuid())
+  userId        String
+  date          DateTime
+  zodiacSign    String
   chineseZodiac String
-  luckyNumbers Json    // Store lucky numbers
-  elements    Json     // Store element data
-  analysis    String?  // Text analysis
-  createdAt   DateTime @default(now())
+  luckyNumbers  Json
+  elements      Json
+  analysis      String?
+  createdAt     DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -171,27 +153,25 @@ model HoroscopeData {
   @@map("horoscope_data")
 }
 
-// Lottery statistics cache
 model LotteryStats {
-  id            String   @id @default(cuid())
-  lotteryType   String   // "thai", "vietnam", "laos"
-  statType      String   // "frequency", "hot_numbers", "cold_numbers", "patterns"
-  data          Json     // Store statistical data
-  period        String   // "monthly", "yearly", "all_time"
-  lastUpdated   DateTime @default(now())
+  id          String   @id @default(cuid())
+  lotteryType String
+  statType    String
+  data        Json
+  period      String
+  lastUpdated DateTime @default(now())
 
   @@unique([lotteryType, statType, period])
   @@map("lottery_stats")
 }
 
-// Dream to number mappings
 model DreamMapping {
-  id          String   @id @default(cuid())
-  dreamText   String
-  keywords    String[] // Array of keywords
-  numbers     Int[]    // Associated numbers
-  category    String   // "animals", "events", "objects", "people"
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  dreamText String
+  keywords  String[]
+  numbers   Int[]
+  category  String
+  createdAt DateTime @default(now())
 
   @@index([category])
   @@map("dream_mappings")
